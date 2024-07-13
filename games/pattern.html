@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match Frenzy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #grid {
+            display: inline-grid;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+        #color-palette {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .color-option {
+            width: 30px;
+            height: 30px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #333;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Color Match Frenzy</h1>
+        <div id="grid"></div>
+        <div id="color-palette"></div>
+        <p id="message">Press Start to begin!</p>
+        <button id="start-button">Start</button>
+        <p>Level: <span id="level">1</span> | Score: <span id="score">0</span> | Lives: <span id="lives">3</span></p>
+    </div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const colorPalette = document.getElementById('color-palette');
+        const message = document.getElementById('message');
+        const startButton = document.getElementById('start-button');
+        const levelSpan = document.getElementById('level');
+        const scoreSpan = document.getElementById('score');
+        const livesSpan = document.getElementById('lives');
+
+        const allColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+        let colors = ['red', 'blue', 'green'];
+        let level = 1;
+        let score = 0;
+        let lives = 3;
+        let gamePattern = [];
+        let playerPattern = [];
+        let selectedColor = null;
+        let isPatternShown = false;
+
+        function getGridSize() {
+            return Math.min(2 + Math.floor(level / 3), 6);
+        }
+
+        function createGrid() {
+            grid.innerHTML = '';
+            const size = getGridSize();
+            grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.addEventListener('click', () => cellClick(i));
+                grid.appendChild(cell);
+            }
+        }
+
+        function createColorPalette() {
+            colorPalette.innerHTML = '';
+            colors.forEach(color => {
+                const colorOption = document.createElement('div');
+                colorOption.classList.add('color-option');
+                colorOption.style.backgroundColor = color;
+                colorOption.addEventListener('click', () => selectColor(color));
+                colorPalette.appendChild(colorOption);
+            });
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            const options = colorPalette.children;
+            for (let option of options) {
+                option.style.border = option.style.backgroundColor === color ? '3px solid black' : '1px solid #333';
+            }
+        }
+
+        function showPattern() {
+            isPatternShown = false;
+            gamePattern = [];
+            const cells = grid.children;
+            for (let i = 0; i < cells.length; i++) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                gamePattern.push(color);
+                cells[i].style.backgroundColor = color;
+            }
+            setTimeout(() => {
+                for (let cell of cells) {
+                    cell.style.backgroundColor = 'white';
+                }
+                message.textContent = 'Now, recreate the pattern!';
+                colorPalette.style.display = 'flex';
+                isPatternShown = true;
+            }, 2000 + level * 500);
+        }
+
+        function cellClick(index) {
+            if (!isPatternShown || !selectedColor) return;
+            const cells = grid.children;
+            cells[index].style.backgroundColor = selectedColor;
+            playerPattern[index] = selectedColor;
+            playSound(selectedColor);
+
+            if (playerPattern.filter(Boolean).length === gamePattern.length) {
+                checkPattern();
+            }
+        }
+
+        function checkPattern() {
+            if (JSON.stringify(playerPattern) === JSON.stringify(gamePattern)) {
+                level++;
+                score += level * 10;
+                message.textContent = 'Correct! Moving to next level.';
+                playSound('success');
+                updateDisplay();
+                setTimeout(startLevel, 1500);
+            } else {
+                lives--;
+                if (lives > 0) {
+                    message.textContent = `Wrong pattern. ${lives} ${lives === 1 ? 'life' : 'lives'} left. Showing correct pattern...`;
+                    playSound('failure');
+                    updateDisplay();
+                    reshowPattern();
+                } else {
+                    message.textContent = 'Game Over!';
+                    playSound('failure');
+                    startButton.style.display = 'inline-block';
+                    startButton.textContent = 'Play Again';
+                    level = 1;
+                    score = 0;
+                    lives = 3;
+                    colors = ['red', 'blue', 'green'];
+                    updateDisplay();
+                }
+            }
+            colorPalette.style.display = 'none';
+        }
+
+        function reshowPattern() {
+            const cells = grid.children;
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].style.backgroundColor = gamePattern[i];
+            }
+            setTimeout(() => {
+                for (let cell of cells) {
+                    cell.style.backgroundColor = 'white';
+                }
+                playerPattern = [];
+                isPatternShown = true;
+                colorPalette.style.display = 'flex';
+                message.textContent = 'Try again. Recreate the pattern!';
+            }, 2000);
+        }
+
+        function startLevel() {
+            if (level % 5 === 0 && colors.length < allColors.length) {
+                colors.push(allColors[colors.length]);
+            }
+            
+            createGrid();
+            createColorPalette();
+            colorPalette.style.display = 'none';
+            playerPattern = new Array(getGridSize() * getGridSize()).fill(null);
+            message.textContent = 'Memorize the pattern...';
+            isPatternShown = false;
+            
+            setTimeout(showPattern, 1000);
+        }
+
+        function updateDisplay() {
+            levelSpan.textContent = level;
+            scoreSpan.textContent = score;
+            livesSpan.textContent = lives;
+        }
+
+   let audioContext;
+
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!audioContext) {
+                initAudio();
+            }
+
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            let duration = 0.1;  // Shortened duration for more immediate feedback
+
+            switch (type) {
+                case 'red': oscillator.frequency.value = 329.63; break; // E4
+                case 'blue': oscillator.frequency.value = 392.00; break; // G4
+                case 'green': oscillator.frequency.value = 493.88; break; // B4
+                case 'yellow': oscillator.frequency.value = 587.33; break; // D5
+                case 'purple': oscillator.frequency.value = 659.25; break; // E5
+                case 'orange': oscillator.frequency.value = 783.99; break; // G5
+                case 'success': 
+                    duration = 0.3;
+                    oscillator.frequency.setValueAtTime(587.33, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(987.77, audioContext.currentTime + 0.2);
+                    break;
+                case 'failure':
+                    duration = 0.3;
+                    oscillator.frequency.setValueAtTime(369.99, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(293.66, audioContext.currentTime + 0.15);
+                    break;
+            }
+
+            gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        startButton.addEventListener('click', () => {
+            initAudio();  // Initialize audio context on user interaction
+            startButton.style.display = 'none';
+            level = 1;
+            score = 0;
+            lives = 3;
+            colors = ['red', 'blue', 'green'];
+            updateDisplay();
+            startLevel();
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
