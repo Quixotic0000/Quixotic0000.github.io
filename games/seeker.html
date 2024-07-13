@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the Monkey</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #game-area {
+            border: 2px solid #333;
+            background-color: #8fbc8f;
+            margin-bottom: 10px;
+        }
+        .bush {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Find the Monkey</h1>
+        <svg id="game-area" width="300" height="300"></svg>
+        <p>Level: <span id="level">1</span></p>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('game-area');
+        const levelSpan = document.getElementById('level');
+        const messageP = document.getElementById('message');
+
+        let level = 1;
+        let bushes = [];
+        let monkeyBush;
+
+        function createSVG(type, attrs) {
+            const elem = document.createElementNS('http://www.w3.org/2000/svg', type);
+            for (const [key, value] of Object.entries(attrs)) {
+                elem.setAttribute(key, value);
+            }
+            return elem;
+        }
+
+        function createBush(x, y) {
+            const bush = createSVG('g', { class: 'bush', transform: `translate(${x},${y})` });
+            const baseColor = '#228B22';
+            const highlightColor = '#32CD32';
+            
+            // Create multiple layers for a more detailed bush
+            for (let i = 0; i < 3; i++) {
+                const offset = i * 5;
+                const circle = createSVG('ellipse', {
+                    cx: 0, cy: -offset, rx: 20 - offset, ry: 15 - offset/2,
+                    fill: i === 1 ? highlightColor : baseColor
+                });
+                bush.appendChild(circle);
+            }
+
+            // Add some "berries" for detail
+            for (let i = 0; i < 5; i++) {
+                const berry = createSVG('circle', {
+                    cx: Math.random() * 30 - 15,
+                    cy: Math.random() * 20 - 25,
+                    r: 2,
+                    fill: '#8B0000'
+                });
+                bush.appendChild(berry);
+            }
+
+            bush.addEventListener('click', () => checkBush(bush));
+            return bush;
+        }
+
+        function createMonkey() {
+            const monkey = createSVG('g', { class: 'monkey' });
+            
+            // Body
+            const body = createSVG('ellipse', { cx: 0, cy: 0, rx: 12, ry: 15, fill: '#8B4513' });
+            
+            // Head
+            const head = createSVG('circle', { cx: 0, cy: -18, r: 10, fill: '#D2691E' });
+            
+            // Face
+            const face = createSVG('ellipse', { cx: 0, cy: -19, rx: 8, ry: 7, fill: '#F4A460' });
+            
+            // Eyes
+            const leftEye = createSVG('circle', { cx: -4, cy: -21, r: 2, fill: '#000' });
+            const rightEye = createSVG('circle', { cx: 4, cy: -21, r: 2, fill: '#000' });
+            
+            // Mouth
+            const mouth = createSVG('path', {
+                d: 'M-3,-15 Q0,-13 3,-15',
+                stroke: '#000',
+                strokeWidth: '1',
+                fill: 'none'
+            });
+            
+            // Ears
+            const leftEar = createSVG('circle', { cx: -8, cy: -25, r: 5, fill: '#D2691E' });
+            const rightEar = createSVG('circle', { cx: 8, cy: -25, r: 5, fill: '#D2691E' });
+
+            monkey.append(body, head, face, leftEye, rightEye, mouth, leftEar, rightEar);
+            return monkey;
+        }
+
+        function initLevel() {
+            gameArea.innerHTML = '';
+            bushes = [];
+            const size = 300 + (level - 1) * 50;
+            gameArea.setAttribute('width', size);
+            gameArea.setAttribute('height', size);
+
+            const numBushes = 3 + (level - 1) * 2;
+            for (let i = 0; i < numBushes; i++) {
+                const x = Math.random() * (size - 60) + 30;
+                const y = Math.random() * (size - 60) + 30;
+                const bush = createBush(x, y);
+                bushes.push(bush);
+                gameArea.appendChild(bush);
+            }
+
+            monkeyBush = bushes[Math.floor(Math.random() * bushes.length)];
+            levelSpan.textContent = level;
+            messageP.textContent = 'Find the monkey!';
+        }
+
+        function checkBush(bush) {
+            if (bush === monkeyBush) {
+                const monkey = createMonkey();
+                bush.appendChild(monkey);
+                messageP.textContent = 'You found the monkey! Click any bush to start the next level.';
+                bushes.forEach(b => b.onclick = () => {
+                    level++;
+                    initLevel();
+                });
+            } else {
+                messageP.textContent = 'No monkey here. Try again!';
+                level = 1;
+                initLevel();
+            }
+        }
+
+        initLevel();
+    </script>
+</body>
+</html>

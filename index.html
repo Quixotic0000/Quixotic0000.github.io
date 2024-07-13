@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>monkey.community</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background-color: #F0F0F0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .content {
+            text-align: center;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .highlight {
+            color: #4CAF50;
+        }
+        #pixelMonkey {
+            width: 320px;
+            height: 320px;
+            margin: 0 auto 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .directory-tab {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .directory-tab:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div id="pixelMonkey"></div>
+        <h1><span class="highlight">monkey</span>.community</h1>
+        <a href="./games/index.html" class="directory-tab">Games</a>
+    </div>
+
+    <script>
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 320;
+        canvas.height = 320;
+        document.getElementById('pixelMonkey').appendChild(canvas);
+
+        const pixelSize = 10;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        const colors = {
+            background: '#FFFFFF',
+            fur: '#A0522D',
+            face: '#F4A460',
+            eyes: '#000000',
+            eyeWhite: '#FFFFFF',
+            mouth: '#803000',
+            mouthInner: '#FA8072',
+            earInner: '#FFA07A'
+        };
+
+        // Monkey face pixel art (32x32 grid)
+        const monkeyFace = [
+            [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+            [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,0,0],
+            [1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,4,4,2,2,2,2,2,4,4,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,4,3,3,4,2,2,2,4,3,3,4,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,4,3,3,4,2,2,2,4,3,3,4,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,4,3,3,4,2,2,2,4,3,3,4,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,4,4,2,2,2,2,2,4,4,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,2,2,2,2,5,5,2,2,2,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,2,2,2,2,2,2,2,2,2,5,5,6,5,2,2,2,2,2,2,2,2,2,1,1,1,1,0,0],
+            [1,1,1,1,1,2,2,2,2,2,2,2,2,5,6,6,5,2,2,2,2,2,2,2,2,1,1,1,1,1,0,0],
+            [1,1,1,1,1,2,2,2,2,2,2,2,2,5,5,5,5,2,2,2,2,2,2,2,2,1,1,1,1,1,0,0],
+            [0,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,0,0,0],
+            [0,0,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0]
+        ];
+
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+        }
+
+        function drawMonkey(mouthOpen) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < monkeyFace.length; y++) {
+                for (let x = 0; x < monkeyFace[y].length; x++) {
+                    let color;
+                    switch (monkeyFace[y][x]) {
+                        case 0: color = colors.background; break;
+                        case 1: color = colors.fur; break;
+                        case 2: color = colors.face; break;
+                        case 3: color = colors.eyes; break;
+                        case 4: color = colors.eyeWhite; break;
+                        case 5: color = colors.mouth; break;
+                        case 6: color = mouthOpen ? colors.mouthInner : colors.mouth; break;
+                    }
+                    drawPixel(x, y, color);
+                }
+            }
+
+            // Add ear inner color
+            drawPixel(6, 11, colors.earInner);
+            drawPixel(7, 11, colors.earInner);
+            drawPixel(6, 12, colors.earInner);
+            drawPixel(25, 11, colors.earInner);
+            drawPixel(24, 11, colors.earInner);
+            drawPixel(25, 12, colors.earInner);
+        }
+
+        let mouthOpen = false;
+        function animate() {
+            mouthOpen = !mouthOpen;
+            drawMonkey(mouthOpen);
+            setTimeout(animate, 500); // Change mouth state every 500ms
+        }
+
+        animate();
+    </script>
+</body>
+</html>
